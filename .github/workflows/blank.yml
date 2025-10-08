@@ -1,36 +1,30 @@
-# This is a basic workflow to help you get started with Actions
+name: Check Server Status and Notify Slack
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch: # 수동 실행 버튼 활성화
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  check-server:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Check ACC official website
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}\n" https://aws-acc.kr)
+          if [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Server is up"
+            echo "status=success" >> $GITHUB_ENV
+          else
+            echo "Server check failed"
+            echo "status=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Send message to Slack
+        run: |
+          if [ "${{ env.status }}" == "success" ]; then
+            MSG="ACC 서버가 정상적으로 응답했습니다"
+          else
+            MSG="ACC 서버 상태에 문제가 감지되었습니다"
+          fi
+
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MSG\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
