@@ -22,11 +22,9 @@ jobs:
       - name: Send message to Slack
         run: |
           if [ "${{ env.status }}" == "success" ]; then
-            MSG=" ACC 서버가 정상적으로 응답했습니다."
+            MSG="ACC 서버가 정상적으로 응답했습니다"
           else
-            MSG="ACC 서버 상태에 문제가 감지되었습니다."
+            MSG="ACC 서버 상태에 문제가 감지되었습니다"
           fi
 
-          curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"$MSG\"}" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MSG\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
